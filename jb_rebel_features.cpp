@@ -20,6 +20,7 @@ IPlayersApi* players_api;
 IJailbreakApi* jailbreak_api;
 
 
+
 bool b_debug = true;
 
 int iHealth;
@@ -30,6 +31,7 @@ int iBlue;
 float flSpeed;
 std::string sSoundAll;
 std::string sSoundLocal;
+std::string sClantag;
 
 
 
@@ -67,11 +69,28 @@ void LoadConfig() {
     sSoundAll = config->GetString("SoundAll", "");
     sSoundLocal = config->GetString("SoundLocal", "");
 
+    sClantag = config->GetString("Clantag","[БУНТ]");
+
     delete config;
 }
 
 CGameEntitySystem* GameEntitySystem() {
     return utils ? utils->GetCGameEntitySystem() : nullptr;
+}
+
+void UpdateScoreboardUI() {
+    if (!utils) return;
+    
+    IGameEventManager2* pEventMgr = utils->GetGameEventManager();
+    if (!pEventMgr) return;
+
+    IGameEvent* pEvent = pEventMgr->CreateEvent("nextlevel_changed", false);
+    if (pEvent) {
+        pEvent->SetString("nextlevel", "unknown");
+        pEvent->SetString("skirmishmode", "default");
+        
+        pEventMgr->FireEvent(pEvent, false);
+    }
 }
 
 void StartupServer() {
@@ -92,6 +111,10 @@ void StartupServer() {
         pPawn->m_ArmorValue = iArmor;
         pPawn->m_flVelocityModifier = flSpeed;
 
+        pController->m_szClan() = CUtlSymbolLarge(sClantag.c_str());
+        utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
+        UpdateScoreboardUI();
+
         Color clr(iRed, iGreen, iBlue, 255);
         pPawn->m_clrRender.Set(clr);
 
@@ -107,6 +130,14 @@ void StartupServer() {
         if (!sSoundLocal.empty()) {
             PlaySlotSound(iSlot, sSoundLocal.c_str());
         }
+    });
+
+    jailbreak_api->OnRemoveRebelPrisoner(g_PLID,[](int iSlot){
+        auto pController = CCSPlayerController::FromSlot(iSlot);
+        if (!pController) return;
+        pController->m_szClan() = CUtlSymbolLarge("\0");
+        utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
+        UpdateScoreboardUI();
     });
 }
 
@@ -169,4 +200,4 @@ const char* jb_rebel_features::GetLicense() { return "Private"; }
 const char* jb_rebel_features::GetLogTag() { return "[JB] Rebel Features"; }
 const char* jb_rebel_features::GetName() { return "[JB] Rebel Features"; }
 const char* jb_rebel_features::GetURL() { return "https://t.me/niffox_2q"; }
-const char* jb_rebel_features::GetVersion() { return "1.0.0"; }
+const char* jb_rebel_features::GetVersion() { return "1.0.1"; }
