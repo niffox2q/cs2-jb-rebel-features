@@ -93,6 +93,22 @@ void UpdateScoreboardUI() {
     }
 }
 
+void ClearClangtag(CCSPlayerController* pc) {
+    pc->m_szClan() = "\0";
+    utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
+    UpdateScoreboardUI();
+}
+
+void ClearAllTags(){
+    for (int i = 0; i < MAX_PLAYERS;i++) {
+        auto pc = CCSPlayerController::FromSlot(i);
+        if (!pc) return;
+        pc->m_szClan() = "\0";
+        utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
+    }
+    UpdateScoreboardUI();
+}
+
 void StartupServer() {
     g_pGameEntitySystem = GameEntitySystem();
     g_pEntitySystem = utils->GetCEntitySystem();
@@ -106,9 +122,6 @@ void StartupServer() {
         auto pPawn = pController->GetPlayerPawn();
         if (!pPawn || !pPawn->IsAlive()) return;
 
-        pPawn->m_iHealth = iHealth;
-        pPawn->m_iMaxHealth = iHealth;
-        pPawn->m_ArmorValue = iArmor;
         pPawn->m_flVelocityModifier = flSpeed;
 
         pController->m_szClan() = CUtlSymbolLarge(sClantag.c_str());
@@ -118,9 +131,6 @@ void StartupServer() {
         Color clr(iRed, iGreen, iBlue, 255);
         pPawn->m_clrRender.Set(clr);
 
-        utils->SetStateChanged(pPawn, "CBaseEntity", "m_iHealth");
-        utils->SetStateChanged(pPawn, "CBaseEntity", "m_iMaxHealth");
-        utils->SetStateChanged(pPawn, "CCSPlayerPawn", "m_ArmorValue");
         utils->SetStateChanged(pPawn, "CCSPlayerPawn", "m_flVelocityModifier");
         utils->SetStateChanged(pPawn, "CBaseModelEntity", "m_clrRender");
 
@@ -138,6 +148,16 @@ void StartupServer() {
         pController->m_szClan() = CUtlSymbolLarge("\0");
         utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
         UpdateScoreboardUI();
+    });
+
+    utils->HookEvent(g_PLID,"player_death",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
+        int iSlot = pEvent->GetInt("userid");
+        auto pc = CCSPlayerController::FromSlot(iSlot);
+        if (!pc) return;
+        ClearClangtag(pc);
+    });
+    utils->HookEvent(g_PLID,"round_end",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
+        ClearAllTags();
     });
 }
 
