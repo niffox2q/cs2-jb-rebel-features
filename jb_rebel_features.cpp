@@ -220,4 +220,4 @@ const char* jb_rebel_features::GetLicense() { return "Private"; }
 const char* jb_rebel_features::GetLogTag() { return "[JB] Rebel Features"; }
 const char* jb_rebel_features::GetName() { return "[JB] Rebel Features"; }
 const char* jb_rebel_features::GetURL() { return "https://t.me/niffox_2q"; }
-const char* jb_rebel_features::GetVersion() { return "1.0.1"; }
+const char* jb_rebel_features::GetVersion() { return "1.0.2"; }
